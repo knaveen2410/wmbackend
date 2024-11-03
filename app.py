@@ -36,7 +36,7 @@ def signup():
             mysql.connection.commit()
             cur.close()
             flash('Account created successfully! Please log in.', 'success')
-            return redirect(url_for('login'))
+            return redirect(url_for('index'))
 
         except Exception as e:
             flash(f"Error: {str(e)}", 'danger')
@@ -47,14 +47,14 @@ def signup():
 
 
 
-# Login route
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+# index route
+@app.route('/index', methods=['GET', 'POST'])
+def index():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         
-        print("Attempting login with:", email)  # Debug
+        print("Attempting index with:", email)  # Debug
 
         cur = mysql.connection.cursor()
         cur.execute("SELECT * FROM users WHERE email = %s", (email,))
@@ -71,7 +71,7 @@ def login():
             session['username'] = user['username']
             session['role'] = user['role']
             session['logged_in'] = True
-            flash('Login successful!', 'success')
+            flash('index successful!', 'success')
             
             # Redirect based on role
             if user['role'] == 'Admin':
@@ -82,17 +82,17 @@ def login():
                 return redirect(url_for('user_dashboard'))
             else:
                 flash('Role not recognized.', 'danger')
-                return redirect(url_for('login'))
+                return redirect(url_for('index'))
         else:
             flash('Invalid email or password.', 'danger')
-            return redirect(url_for('login'))
+            return redirect(url_for('index'))
 
-    return render_template('login.html')
+    return render_template('index.html')
 
 
 
-# Login required decorator
-def login_required(roles=None):
+# index required decorator
+def index_required(roles=None):
     if roles is None:
         roles = []
 
@@ -101,17 +101,17 @@ def login_required(roles=None):
         def decorated_function(*args, **kwargs):
             if 'logged_in' not in session:
                 flash('You need to log in first!', 'danger')
-                return redirect(url_for('login'))
+                return redirect(url_for('index'))
             if roles and session.get('role') not in roles:
                 flash('You do not have access to this page.', 'danger')
-                return redirect(url_for('login'))
+                return redirect(url_for('index'))
             return f(*args, **kwargs)
         return decorated_function
     return wrapper
 
 # User dashboard with complaint submission form
 @app.route('/user-dashboard', methods=['GET', 'POST'])
-@login_required(roles=["User"])
+@index_required(roles=["User"])
 def user_dashboard():
     if request.method == 'POST':
         name = request.form['name']
@@ -139,7 +139,7 @@ def user_dashboard():
 
 # Admin dashboard to view and update complaints
 @app.route('/admin-dashboard', methods=['GET', 'POST'])
-@login_required(roles=["Admin"])
+@index_required(roles=["Admin"])
 def admin_dashboard():
     if request.method == 'POST':
         complaint_id = request.form['complaint_id']
@@ -162,10 +162,10 @@ def admin_dashboard():
 def logout():
     session.clear()
     flash('You have been logged out successfully.', 'success')
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 @app.route('/')
 def index():
-    return render_template('login.html')
+    return render_template('index.html')
 if __name__ == '__main__':
     app.run(debug=True)
